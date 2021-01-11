@@ -16,6 +16,9 @@ package gethwrappers
 
 //go:generate mockery --recursive --name FluxAggregatorInterface --output ../mocks/ --case=underscore --structname FluxAggregator --filename flux_aggregator.go
 
+// TODO: Switch this to 0.7/Operator.json
+//go:generate go run ./generation/generate/wrap.go ../../../evm-contracts/abi/v0.6/Oracle.json operator_wrapper
+
 //go:generate go run ./generation/generate_link/wrap_link.go
 
 // To run these commands, you must either install docker, or the correct version
