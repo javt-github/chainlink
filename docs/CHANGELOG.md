@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Better debug logging in Gas Updater
+- Support requestNewRound in libocr
+
+requestNewRound enables dedicated requesters to request a fresh report to
+be sent to the contract right away regardless of heartbeat or deviation.
 
 ### Fixed
 
