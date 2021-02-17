@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/smartcontractkit/chainlink/core/assets"
 	"github.com/smartcontractkit/chainlink/core/services/eth"
+	"github.com/smartcontractkit/chainlink/core/services/log"
 	"github.com/smartcontractkit/chainlink/core/store/models"
 )
 
@@ -35,11 +36,11 @@ var (
 
 type (
 	Oracle interface {
-		eth.ConnectedContract
+		ConnectedContract
 	}
 
 	oracle struct {
-		eth.ConnectedContract
+		ConnectedContract
 		ethClient eth.Client
 		address   common.Address
 	}
@@ -75,18 +76,18 @@ type (
 	}
 )
 
-func NewOracle(address common.Address, ethClient eth.Client, logBroadcaster eth.LogBroadcaster) (Oracle, error) {
+func NewOracle(address common.Address, ethClient eth.Client, logBroadcaster log.Broadcaster) (Oracle, error) {
 	codec, err := eth.GetV6ContractCodec(OracleName)
 	if err != nil {
 		return nil, err
 	}
-	connectedContract := eth.NewConnectedContract(codec, address, ethClient, logBroadcaster)
+	connectedContract := NewConnectedContract(codec, address, ethClient, logBroadcaster)
 	return &oracle{connectedContract, ethClient, address}, nil
 }
 
-func (o *oracle) SubscribeToLogs(listener eth.LogListener) (connected bool, _ eth.UnsubscribeFunc) {
+func (o *oracle) SubscribeToLogs(listener log.Listener) (connected bool, _ UnsubscribeFunc) {
 	return o.ConnectedContract.SubscribeToLogs(
-		eth.NewDecodingLogListener(o, oracleLogTypes, listener),
+		log.NewDecodingListener(o, oracleLogTypes, listener),
 	)
 }
 

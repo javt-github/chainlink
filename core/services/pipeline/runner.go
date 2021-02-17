@@ -18,6 +18,8 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate mockery --name Runner --structname PipelineRunner --output ../../services/log/mocks/ --case=underscore
+
 type (
 	// Runner checks the DB for incomplete TaskRuns and runs them.  For a
 	// TaskRun to be eligible to be run, its parent/input tasks must already
