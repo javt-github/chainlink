@@ -2,6 +2,7 @@ package directrequest
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	gethCommon "github.com/ethereum/go-ethereum/common"
@@ -68,7 +69,9 @@ type listener struct {
 
 // Start complies with job.Service
 func (d listener) Start() error {
+	fmt.Println("before register", d.logBroadcaster)
 	connected := d.logBroadcaster.Register(d.contractAddress, d)
+	fmt.Println("after register")
 	if !connected {
 		return errors.New("Failed to register listener with logBroadcaster")
 	}
