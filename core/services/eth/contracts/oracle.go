@@ -72,7 +72,7 @@ type (
 
 	LogCancelOracleRequest struct {
 		types.Log
-		RequestId [32]byte
+		RequestID [32]byte
 	}
 )
 
