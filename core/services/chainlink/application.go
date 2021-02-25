@@ -176,6 +176,7 @@ func NewApplication(config *orm.Config, ethClient eth.Client, advisoryLocker pos
 			job.FluxMonitor: fluxmonitorv2.NewDelegate(
 				store,
 				jobORM,
+				pipelineORM,
 				pipelineRunner,
 				store.DB,
 				ethClient,
