@@ -9,8 +9,12 @@ services:
       dockerfile: core/chainlink.Dockerfile
     # Note that the keystore import allows us to submit transactions
     # because addresses are specified when starting the parity/geth node
-    # to be prefunded with eth.
-    entrypoint: /bin/sh -c "chainlink node import /run/secrets/keystore && chainlink node start -d -p /run/secrets/node_password -a /run/secrets/apicredentials"
+    # to be prefunded with eth. Use the "entrypoint" command below instead of
+    # the existing command if you want to run cypress tests locally.
+    # TODO: once FM supports multiple keys we should be able to use
+    # the entrypoint command for CI tests as well.
+    # entrypoint: /bin/sh -c "chainlink node import /run/secrets/keystore && chainlink node start -d -p /run/secrets/node_password -a /run/secrets/apicredentials"
+    command: node start -d -p /run/secrets/node_password -a /run/secrets/apicredentials
     restart: always
     environment:
       - ETH_CHAIN_ID
@@ -43,7 +47,8 @@ services:
     build:
       context: ../../
       dockerfile: core/chainlink.Dockerfile
-    entrypoint: /bin/sh -c "chainlink node import /run/secrets/keystore && chainlink node start -d -p /run/secrets/node_password -a /run/secrets/apicredentials"
+    # entrypoint: /bin/sh -c "chainlink node import /run/secrets/keystore && chainlink node start -d -p /run/secrets/node_password -a /run/secrets/apicredentials"
+    command: node start -d -p /run/secrets/node_password -a /run/secrets/apicredentials
     restart: always
     environment:
       - ETH_CHAIN_ID
