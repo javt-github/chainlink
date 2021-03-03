@@ -88,7 +88,7 @@ func (ec *ethConfirmer) OnNewLongestChain(ctx context.Context, head models.Head)
 
 func (ec *ethConfirmer) Start() error {
 	if !ec.OkayToStart() {
-		return errors.New("Pipeline runner has already been started")
+		return errors.New("EthConfirmer has already been started")
 	}
 	go ec.runLoop()
 	return nil
@@ -96,7 +96,7 @@ func (ec *ethConfirmer) Start() error {
 
 func (ec *ethConfirmer) Close() error {
 	if !ec.OkayToStop() {
-		return errors.New("Pipeline runner has already been stopped")
+		return errors.New("EthConfirmer has already been stopped")
 	}
 	ec.ctxCancel()
 	<-ec.chDone

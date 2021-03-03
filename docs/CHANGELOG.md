@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- The global env var JOB_PIPELINE_MAX_TASK_DURATION is no longer supported
+- The global env var `JOB_PIPELINE_MAX_TASK_DURATION` is no longer supported
 for OCR jobs.
-- Better debug logging in Gas Updater
+
 - `ETH_MAX_UNCONFIRMED_TRANSACTIONS`
 
 Chainlink node now has a maximum number of unconfirmed transactions that
@@ -53,6 +53,19 @@ you can do this by running your geth node with `--rpc.gascap=0
 - Bump `ORM_MAX_IDLE_CONNS` default from 5 to 10
 
 Each Chainlink node will now use a maximum of 23 database connections (up from previous max of 13). Make sure your postgres database is tuned accordingly, especially if you are running multiple Chainlink nodes on a single database. If you find yourself hitting connection limits, you can consider reducing `ORM_MAX_OPEN_CONNS` but this may result in degraded performance.
+
+- Improvements to the GasUpdater
+
+Various efficiency and correctness improvements have been made to the
+GasUpdater. It places less load on the ethereum node and now features re-org
+detection.
+
+Most notably, GasUpdater no longer takes a 24 block delay to "warm up" on
+application start and instead loads all relevant block history immediately.
+This means that the application gas price will always be updated correctly
+after reboot before the first transaction is ever sent, eliminating the previous
+scenario where the node could send underpriced or overpriced transactions for a
+period after a reboot, until the gas updater caught up.
 
 ## [0.10.1] - 2021-02-23
 

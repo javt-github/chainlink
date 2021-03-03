@@ -12,6 +12,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -128,7 +129,6 @@ func TestIntegration_HttpRequestWithHeaders(t *testing.T) {
 
 	gethClient.On("ChainID", mock.Anything).Return(config.ChainID(), nil)
 	gethClient.On("BalanceAt", mock.Anything, mock.Anything, mock.Anything).Maybe().Return(oneETH.ToInt(), nil)
-	gethClient.On("BlockByNumber", mock.Anything, big.NewInt(inLongestChain)).Return(cltest.BlockWithTransactions(), nil)
 
 	gethClient.On("SendTransaction", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
@@ -297,7 +297,6 @@ func TestIntegration_RunLog(t *testing.T) {
 				BlockHash:   test.receiptBlockHash,
 				BlockNumber: big.NewInt(creationHeight),
 			}
-			gethClient.On("BlockByNumber", mock.Anything, mock.Anything).Return(&types.Block{}, nil)
 
 			gethClient.On("TransactionReceipt", mock.Anything, mock.Anything).
 				Return(confirmedReceipt, nil)
@@ -368,9 +367,6 @@ func TestIntegration_ExternalAdapter_RunLogInitiated(t *testing.T) {
 	jr := cltest.WaitForRuns(t, j, app.Store, 1)[0]
 	cltest.WaitForJobRunToPendIncomingConfirmations(t, app.Store, jr)
 
-	gethClient.On("BlockByNumber", mock.Anything, mock.Anything).Return(types.NewBlockWithHeader(&types.Header{
-		Number: big.NewInt(int64(logBlockNumber + 8)),
-	}), nil) // Gas updater checks the block by number.
 	newHeads := <-newHeadsCh
 	newHeads <- cltest.Head(logBlockNumber + 8)
 	cltest.WaitForJobRunToPendIncomingConfirmations(t, app.Store, jr)
@@ -872,8 +868,6 @@ func TestIntegration_FluxMonitor_Deviation(t *testing.T) {
 		}).
 		Return(nil)
 
-	gethClient.On("BlockByNumber", mock.Anything, big.NewInt(inLongestChain)).Return(cltest.BlockWithTransactions(), nil)
-
 	// Create FM Job, and wait for job run to start because the above criteria initiates a run.
 	buffer := cltest.MustReadFile(t, "testdata/flux_monitor_job.json")
 	var job models.JobSpec
@@ -1030,10 +1024,6 @@ func TestIntegration_FluxMonitor_NewRound(t *testing.T) {
 		}).
 		Return(nil)
 
-	gethClient.On("BlockByNumber", mock.Anything, mock.Anything).Return(types.NewBlockWithHeader(&types.Header{
-		Number: big.NewInt(int64(11)),
-	}), nil)
-
 	logs <- log
 
 	newHeads := <-newHeadsCh
@@ -1105,9 +1095,6 @@ func TestIntegration_MultiwordV1(t *testing.T) {
 			*head = cltest.Head(inLongestChain)
 		}).
 		Return(nil)
-
-	gethClient.On("BlockByNumber", mock.Anything, big.NewInt(inLongestChain)).
-		Return(cltest.BlockWithTransactions(), nil)
 
 	err := app.StartAndConnect()
 	require.NoError(t, err)
@@ -1520,4 +1507,49 @@ observationSource = """
 			require.Len(t, j.JobSpecErrors, 0)
 		}
 	}
+}
+
+func TestIntegration_GasUpdater(t *testing.T) {
+	t.Parallel()
+
+	c, cfgCleanup := cltest.NewConfig(t)
+	defer cfgCleanup()
+	c.Set("ETH_GAS_PRICE_DEFAULT", 5000000000)
+	c.Set("GAS_UPDATER_ENABLED", true)
+	c.Set("GAS_UPDATER_BLOCK_DELAY", 0)
+	c.Set("GAS_UPDATER_BLOCK_HISTORY_SIZE", 2)
+
+	rpcClient, ethClient, _, assertMocksCalled := cltest.NewEthMocksWithStartupAssertions(t)
+	defer assertMocksCalled()
+	app, cleanup := cltest.NewApplicationWithConfigAndKey(t, c,
+		eth.NewClientWith(rpcClient, ethClient),
+	)
+	defer cleanup()
+
+	h := models.Head{Hash: cltest.NewHash(), Number: 42}
+	rpcClient.On("CallContext", mock.Anything, mock.AnythingOfType("**models.Head"), "eth_getBlockByNumber", "latest", false).Return(nil).Run(func(args mock.Arguments) {
+		arg := args.Get(1).(**models.Head)
+		*arg = &h
+	})
+	rpcClient.On("BatchCallContext", mock.Anything, mock.MatchedBy(func(b []rpc.BatchElem) bool {
+		return len(b) == 2 &&
+			b[0].Method == "eth_getBlockByNumber" && b[0].Args[0] == "0x29" && b[0].Args[1] == true && reflect.TypeOf(b[0].Result) == reflect.TypeOf(&services.Block{}) &&
+			b[1].Method == "eth_getBlockByNumber" && b[1].Args[0] == "0x2a" && b[1].Args[1] == true && reflect.TypeOf(b[1].Result) == reflect.TypeOf(&services.Block{})
+	})).Return(nil).Run(func(args mock.Arguments) {
+		elems := args.Get(1).([]rpc.BatchElem)
+		elems[0].Result = &services.Block{
+			Number:       42,
+			Transactions: cltest.TransactionsFromGasPrices(42000000000),
+		}
+		elems[1].Result = &services.Block{
+			Number:       41,
+			Hash:         cltest.NewHash(),
+			Transactions: cltest.TransactionsFromGasPrices(42000000000),
+		}
+	})
+
+	require.NoError(t, app.Start())
+
+	require.Equal(t, "42000000000", app.Config.EthGasPriceDefault().String())
+	require.NoError(t, app.Stop())
 }
