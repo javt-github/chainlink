@@ -17,30 +17,31 @@ type ContractSubmitter interface {
 // FluxAggregatorContractSubmitter submits the polled answer in an eth tx.
 type FluxAggregatorContractSubmitter struct {
 	flux_aggregator_wrapper.FluxAggregatorInterface
-	store Store
+	orm ORM
 }
 
 // NewFluxAggregatorContractSubmitter constructs a new NewFluxAggregatorContractSubmitter
-func NewFluxAggregatorContractSubmitter(contract flux_aggregator_wrapper.FluxAggregatorInterface, store Store) *FluxAggregatorContractSubmitter {
+func NewFluxAggregatorContractSubmitter(contract flux_aggregator_wrapper.FluxAggregatorInterface, orm ORM) *FluxAggregatorContractSubmitter {
 	return &FluxAggregatorContractSubmitter{
 		FluxAggregatorInterface: contract,
-		store:                   store,
+		orm:                     orm,
 	}
 }
 
 // Submit submits the answer by writing a EthTx for the bulletprooftxmanager to
 // pick up
 func (c *FluxAggregatorContractSubmitter) Submit(roundID *big.Int, submission *big.Int) error {
-	//
-	fromAddress, err := c.store.GetRoundRobinAddress()
+	// fromAddress, err := c.orm.GetRoundRobinAddress()
 
-	_, err = c.FluxAggregatorInterface.Submit(&bind.TransactOpts{
-		From: fromAddress,
+	_, err := c.FluxAggregatorInterface.Submit(&bind.TransactOpts{
+		// From: fromAddress,
 	}, roundID, submission)
 
 	// bind.NewTransactor()
 
 	return err
+
+	// return nil
 }
 
 // TransactOpts is the collection of authorization data required to create a
