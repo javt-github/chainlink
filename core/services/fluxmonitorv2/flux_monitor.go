@@ -75,13 +75,13 @@ func (f fluxMonitorFactory) New(
 	f.logBroadcaster.AddDependents(1)
 	fluxAggregator, err := flux_aggregator_wrapper.NewFluxAggregator(
 		spec.ContractAddress,
-		NewFluxMonitorEthClient(f.ethClient, &f.store),
+		NewFluxMonitorEthClient(f.ethClient, f.store),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	contractSubmitter := NewFluxAggregatorContractSubmitter(fluxAggregator)
+	contractSubmitter := NewFluxAggregatorContractSubmitter(fluxAggregator, f.store)
 
 	// Set up the contract flags
 	flags, err := NewFlags(cfg.FlagsContractAddress, f.ethClient)
@@ -1007,15 +1007,6 @@ func (fm *FluxMonitor) loggerFieldsForAnswerUpdated(log flux_aggregator_wrapper.
 		"job", fm.spec.JobID,
 	}
 }
-
-// OutsideDeviation checks whether the next price is outside the threshold.
-// If both thresholds are zero (default value), always returns true.
-
-// func OutsideDeviation(curAnswer, nextAnswer decimal.Decimal, thresholds DeviationThresholds) bool {
-// 	checker := NewDeviationChecker(thresholds)
-
-// 	return deviationChecker.OutsideDeviation(curAnswer, nextAnswer)
-// }
 
 func (fm *FluxMonitor) statsAndStatusForRound(roundID uint32) (
 	FluxMonitorRoundStatsV2,
