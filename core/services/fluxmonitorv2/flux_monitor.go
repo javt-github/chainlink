@@ -955,10 +955,13 @@ func (fm *FluxMonitor) submitTransaction(
 	roundID uint32,
 ) error {
 	// Submit the Eth Tx
-	fm.contractSubmitter.Submit(
+	err := fm.contractSubmitter.Submit(
 		new(big.Int).SetInt64(int64(roundID)),
 		polledAnswer.BigInt(),
 	)
+	if err != nil {
+		return err
+	}
 
 	// Update the flux monitor round stats
 	err := fm.orm.UpdateFluxMonitorRoundStats(

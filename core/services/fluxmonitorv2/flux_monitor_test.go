@@ -225,6 +225,7 @@ func TestFluxMonitor_PollIfEligible(t *testing.T) {
 						Val:  pipeline.FinalErrors{null.StringFrom("Random: String, foo")},
 						Null: false,
 					}
+				default:
 				}
 
 				orm.
