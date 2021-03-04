@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The global env var JOB_PIPELINE_MAX_TASK_DURATION is no longer supported
+for OCR jobs.
 - Better debug logging in Gas Updater
 - `ETH_MAX_UNCONFIRMED_TRANSACTIONS`
 
@@ -40,6 +42,17 @@ at the highest price that worked.
 Node operators should check their geth nodes and remove this cap if configured,
 you can do this by running your geth node with `--rpc.gascap=0
 --rpc.txfeecap=0` or setting these values in your config toml.
+
+- Make head backfill asynchronous. This should eliminate some harmless but
+  annoying errors related to backfilling heads, logged on startup and
+  occasionally during normal operation on fast chains like Kovan.
+
+### Changed
+
+- Bump `ORM_MAX_OPEN_CONNS` default from 10 to 20
+- Bump `ORM_MAX_IDLE_CONNS` default from 5 to 10
+
+Each Chainlink node will now use a maximum of 23 database connections (up from previous max of 13). Make sure your postgres database is tuned accordingly, especially if you are running multiple Chainlink nodes on a single database. If you find yourself hitting connection limits, you can consider reducing `ORM_MAX_OPEN_CONNS` but this may result in degraded performance.
 
 ## [0.10.1] - 2021-02-23
 
